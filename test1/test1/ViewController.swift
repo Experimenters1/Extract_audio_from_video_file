@@ -108,40 +108,6 @@ class ViewController: UIViewController {
     
     
     
-//    func extractAudio(from videoURL: URL, to outputURL: URL) throws {
-//      // Create an asset for the video file.
-//      let asset = AVAsset(url: videoURL)
-//
-//      // Create an array of audio tracks in the asset.
-//      let audioTracks = asset.tracks(withMediaType: .audio)
-//
-//      // Create a new composition to hold the audio track.
-//      let composition = AVMutableComposition()
-//
-//      // Iterate through the audio tracks and add them to the composition.
-//      for track in audioTracks {
-//        let compositionTrack = composition.addMutableTrack(withMediaType: .audio, preferredTrackID: 0)
-//        compositionTrack.append(track)
-//      }
-//
-//      // Create an export session to export the audio track.
-//      let exportSession = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetAppleM4A)
-//      exportSession.outputFileType = .m4a
-//      exportSession.outputURL = outputURL
-//
-//      // Start the export session.
-//      exportSession.exportAsynchronously {
-//        switch exportSession.status {
-//        case .completed:
-//          print("Audio extracted successfully.")
-//        case .failed:
-//          print("Failed to extract audio.")
-//        default:
-//          print("Unknown status.")
-//        }
-//      }
-//    }
-    
     
     
 }
@@ -227,7 +193,23 @@ extension ViewController: UITableViewDelegate {
             return
         }
         
-        let outputFileURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("output.m4a")
+        // Create directory path for ExtractedAudio
+        let fileManager = FileManager.default
+        let directoryPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("ExtractedAudio")
+        
+        // Check if ExtractedAudio directory exists, if not, create it
+        if let directoryPath = directoryPath {
+            if !fileManager.fileExists(atPath: directoryPath.path) {
+                do {
+                    try fileManager.createDirectory(at: directoryPath, withIntermediateDirectories: true, attributes: nil)
+                } catch {
+                    completion(nil)
+                    return
+                }
+            }
+        }
+        
+        let outputFileURL = directoryPath?.appendingPathComponent("output.m4a")
         
         session.outputFileType = .m4a
         session.outputURL = outputFileURL
