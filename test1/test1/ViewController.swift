@@ -209,20 +209,55 @@ extension ViewController: UITableViewDelegate {
             }
         }
         
-        let outputFileURL = directoryPath?.appendingPathComponent("output.m4a")
+        let alertController = UIAlertController(title: "Enter File Name", message: nil, preferredStyle: .alert)
+        alertController.addTextField { (textField) in
+            textField.placeholder = "File Name"
+        }
         
-        session.outputFileType = .m4a
-        session.outputURL = outputFileURL
-        
-        session.exportAsynchronously {
-            switch session.status {
-            case .completed:
-                completion(outputFileURL)
-            case .failed, .cancelled:
+        let saveAction = UIAlertAction(title: "Save", style: .default) { (_) in
+            guard let fileName = alertController.textFields?.first?.text else {
                 completion(nil)
-            default:
-                break
+                return
             }
+            
+            let fileExtension = ".m4a"
+            var outputFileName = fileName + fileExtension
+            var outputURL = directoryPath?.appendingPathComponent(outputFileName)
+            
+            // Check if file already exists, modify the name with a unique number appended to the extension
+            var fileNumber = 1
+            while fileManager.fileExists(atPath: outputURL?.path ?? "") {
+                outputFileName = "\(fileName)_\(fileNumber)" + fileExtension
+                outputURL = directoryPath?.appendingPathComponent(outputFileName)
+                fileNumber += 1
+            }
+            
+            session.outputFileType = .m4a
+            session.outputURL = outputURL
+            
+            session.exportAsynchronously {
+                switch session.status {
+                case .completed:
+                    completion(outputURL)
+                case .failed, .cancelled:
+                    completion(nil)
+                default:
+                    break
+                }
+            }
+        }
+        
+        alertController.addAction(saveAction)
+        
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel) { (_) in
+            completion(nil)
+        }
+        
+        alertController.addAction(cancelAction)
+        
+        // Present the UIAlertController
+        if let topViewController = UIApplication.shared.keyWindow?.rootViewController {
+            topViewController.present(alertController, animated: true, completion: nil)
         }
     }
 
