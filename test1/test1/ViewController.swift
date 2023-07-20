@@ -22,6 +22,10 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         
+        
+        // Do any additional setup after loading the view.
+        loadLinks()
+        
         let fileManager = FileManager.default
         guard let documentsFolderURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
             return
@@ -56,6 +60,20 @@ class ViewController: UIViewController {
         
         for fileName in fileNames {
             let fileURL = documentsFolderURL.appendingPathComponent(fileName)
+            
+            
+            // Check if the item is a folder (directory)
+                    var isDirectory: ObjCBool = false
+                    if fileManager.fileExists(atPath: fileURL.path, isDirectory: &isDirectory) {
+                        if isDirectory.boolValue {
+                            // If it's a folder, skip and continue to the next item
+                            continue
+                        }
+                    } else {
+                        // The item doesn't exist, skip and continue to the next item
+                        continue
+                    }
+            
             let attributes = try? fileManager.attributesOfItem(atPath: fileURL.path)
             let creationDate = attributes?[.creationDate] as? Date ?? Date()
             let type = fileURL.pathExtension.lowercased()
@@ -106,6 +124,12 @@ class ViewController: UIViewController {
     }
 
     
+    @IBAction func addLinkButtonTapped(_ sender: Any) {
+        // Display file picker to select a file
+                   let filePicker = UIDocumentPickerViewController(documentTypes: ["public.data"], in: .import)
+                   filePicker.delegate = self
+                   present(filePicker, animated: true)
+    }
     
     
     
@@ -164,6 +188,27 @@ extension ViewController: UIImagePickerControllerDelegate, UINavigationControlle
         dismiss(animated: true, completion: nil)
     }
 }
+
+
+extension ViewController: UIDocumentPickerDelegate {
+
+       
+       func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+           guard let sourceURL = urls.first else { return }
+           let destinationURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+           let fileName = sourceURL.lastPathComponent
+
+           do {
+               
+               let newName = try copyFileToDocumentsFolder(sourceURL: sourceURL, destinationURL: destinationURL, fileName: fileName)
+               links.append((name: newName, date: "", type: sourceURL.pathExtension, url: destinationURL.appendingPathComponent(newName)))
+               saveLinks()
+               table_View1.reloadData()
+           } catch {
+               print("Error copying file: \(error.localizedDescription)")
+           }
+       }
+   }
 
 // MARK: - UITableViewDelegate
 
